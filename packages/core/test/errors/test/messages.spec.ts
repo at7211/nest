@@ -197,6 +197,27 @@ describe('Error Messages', () => {
 
       expect(actualMessage).to.equal(expectedResult);
     });
+    it('should detect likely import type issue and provide specific guidance', () => {
+      const expectedResult =
+        stringCleaner(`Nest can't resolve dependencies of the ResourceController (ResourceService, ?). Please make sure that the argument dependency at index [1] is available in the current context.
+
+      Potential solutions:
+      - The dependency at index [1] appears to be undefined at runtime
+      - This commonly occurs when using 'import type' instead of 'import' for a class that needs to be injected
+      - Check your imports: change 'import type { SomeService }' to 'import { SomeService }'
+      - Verify the dependency is properly imported for runtime use, not just for typing
+      `);
+
+      const actualMessage = stringCleaner(
+        new UnknownDependenciesException('ResourceController', {
+          index: 1,
+          dependencies: ['ResourceService', undefined], // undefined simulates import type issue
+          name: undefined, // This is key - name becomes undefined with import type
+        }).message,
+      );
+
+      expect(actualMessage).to.equal(expectedResult);
+    });
   });
 
   describe('UNDEFINED_MODULE_EXCEPTION', () => {

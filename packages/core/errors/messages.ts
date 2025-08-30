@@ -69,10 +69,29 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   const moduleName = getModuleName(moduleRef);
   const dependencyName = getDependencyName(name, 'dependency');
 
-  const potentialSolutions =
-    // If module's name is well defined
-    moduleName !== 'current'
-      ? `\n
+  // Detect likely import type issue
+  const isLikelyImportTypeIssue =
+    name === undefined &&
+    index !== undefined &&
+    dependencies &&
+    dependencies[index] === undefined;
+
+  let potentialSolutions;
+
+  if (isLikelyImportTypeIssue) {
+    potentialSolutions = `\n
+Potential solutions:
+- The dependency at index [${index}] appears to be undefined at runtime
+- This commonly occurs when using 'import type' instead of 'import' for a class that needs to be injected
+- Check your imports: change 'import type { SomeService }' to 'import { SomeService }'
+- Verify the dependency is properly imported for runtime use, not just for typing
+`;
+  } else {
+    // Original logic preserved for other cases
+    potentialSolutions =
+      // If module's name is well defined
+      moduleName !== 'current'
+        ? `\n
 Potential solutions:
 - Is ${moduleName} a valid NestJS module?
 - If ${dependencyName} is a provider, is it part of the current ${moduleName}?
@@ -81,7 +100,7 @@ Potential solutions:
     imports: [ /* the Module containing ${dependencyName} */ ]
   })
 `
-      : `\n
+        : `\n
 Potential solutions:
 - If ${dependencyName} is a provider, is it part of the current Module?
 - If ${dependencyName} is exported from a separate @Module, is that module imported within Module?
@@ -89,6 +108,7 @@ Potential solutions:
     imports: [ /* the Module containing ${dependencyName} */ ]
   })
 `;
+  }
 
   let message = `Nest can't resolve dependencies of the ${type.toString()}`;
 
