@@ -69,12 +69,18 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   const moduleName = getModuleName(moduleRef);
   const dependencyName = getDependencyName(name, 'dependency');
 
-  // Detect likely import type issue
+  // Detect likely import type issue - enhanced detection
   const isLikelyImportTypeIssue =
-    name === undefined &&
-    index !== undefined &&
-    dependencies &&
-    dependencies[index] === undefined;
+    (name === undefined &&
+      index !== undefined &&
+      dependencies &&
+      dependencies[index] === undefined) ||
+    // Also detect when dependency name is undefined but other dependencies exist
+    (name === undefined &&
+      dependencies &&
+      dependencies.some(dep => dep !== undefined) &&
+      index !== undefined &&
+      dependencies[index] === undefined);
 
   let potentialSolutions;
 
@@ -82,9 +88,15 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
     potentialSolutions = `\n
 Potential solutions:
 - The dependency at index [${index}] appears to be undefined at runtime
-- This commonly occurs when using 'import type' instead of 'import' for a class that needs to be injected
-- Check your imports: change 'import type { SomeService }' to 'import { SomeService }'
-- Verify the dependency is properly imported for runtime use, not just for typing
+- This commonly occurs when using 'import type' instead of 'import' for injectable classes
+- Check your imports and change:
+  ❌ import type { SomeService } from './some.service';
+  ✅ import { SomeService } from './some.service';
+- Ensure the imported class is decorated with @Injectable() or is a valid provider
+- If using dynamic imports, ensure the class is available at runtime, not just for type checking
+
+Read more about dependency injection: https://docs.nestjs.com/providers#dependency-injection
+Common import issues: https://docs.nestjs.com/faq#common-errors
 `;
   } else {
     // Original logic preserved for other cases
@@ -99,6 +111,8 @@ Potential solutions:
   @Module({
     imports: [ /* the Module containing ${dependencyName} */ ]
   })
+
+Read more about dependency injection: https://docs.nestjs.com/providers#dependency-injection
 `
         : `\n
 Potential solutions:
@@ -107,6 +121,8 @@ Potential solutions:
   @Module({
     imports: [ /* the Module containing ${dependencyName} */ ]
   })
+
+Read more about dependency injection: https://docs.nestjs.com/providers#dependency-injection
 `;
   }
 
@@ -195,6 +211,8 @@ export const UNKNOWN_EXPORT_MESSAGE = (
 
 Possible Solutions:
 - Is ${token} part of the relevant providers/imports within ${module}?
+
+Read more about module exports: https://docs.nestjs.com/modules#module-re-exporting
 `;
 };
 

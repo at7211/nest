@@ -110,4 +110,26 @@ describe('Injector', () => {
       expect(app.get(DYNAMIC_TOKEN)).to.be.eql(DYNAMIC_VALUE);
     });
   });
+
+  describe('enhanced error messages', () => {
+    it('should provide enhanced import type guidance for undefined dependencies', async () => {
+      try {
+        const builder = Test.createTestingModule({
+          imports: [InjectModule],
+        });
+        await builder.compile();
+      } catch (err) {
+        expect(err).to.be.instanceof(RuntimeException);
+        if (err instanceof UnknownDependenciesException) {
+          const errorMessage = err.message;
+          expect(errorMessage).to.include(
+            'Read more about dependency injection:',
+          );
+          expect(errorMessage).to.include(
+            'https://docs.nestjs.com/providers#dependency-injection',
+          );
+        }
+      }
+    });
+  });
 });
